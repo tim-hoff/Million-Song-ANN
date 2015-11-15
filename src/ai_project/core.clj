@@ -82,7 +82,7 @@
   [x w y lr]
   (let [z (pluck first (dot x w))
         yhat (sigmoid z)
-        xt (transpose x); [[x1 x2 x3]] to [[x1] [x2] [x3]]
+        xt (transpose x); [[x1 x2 x3   to [[x1] [x2] [x3]]
         ycost (* -1 (- y yhat)); -(y-yhat)
         enz (Math/exp (* -1 z)); e^(-z)
         sigmoid-prime (/ enz (Math/pow (+ 1 enz) 2)); enz/(1+enz)^2
@@ -141,6 +141,13 @@
       (recur (+ step m) 
              (conj acc [m (first (error-check data weight m))])))))
 
+(defn refeed 
+  "refeeds results from training at different learning rates `lrs`"
+  [data weight lrs]
+  (loop [w weight lr lrs]
+    (if (empty? lr)
+      w
+      (recur (feed data w (first lr)) (rest lr)))))
 
 (defn expand
   "expands the dataset for testing"
@@ -150,22 +157,15 @@
       (shuffle (shuffle ds))
       (recur (into [] (concat ds dataset)) (- m 1) ))))
 
-(defn refeed 
-  "refeeds results from training at different learning rates `lrs`"
-  [data weight lrs]
-  (loop [w weight lr lrs]
-    (if (empty? lr)
-      w
-      (recur (feed data w (first lr)) (rest lr)))))
-
 (defn nifty-feeder
   "expands and feeds a dataset, useful for finding that special rate"
   [data magnitude lrs size  & {:keys [verbose-flag] :or {verbose-flag false}}]
   (let [dt (expand data magnitude)
         w (first (weight-gen size))
-        w2 (refeed dt w lrs)]
+        ; w2 (refeed dt w lrs)
+        ]
     (when verbose-flag (println "Initial Weights") (pm w))
-     w2))
+     w))
 
 (defn bestset 
   [sets]
@@ -189,10 +189,8 @@
   (i/$ [ :analysis_sample_rate
 				 :artist_familiarity
 				 :artist_playmeid
-				 ; :danceability
 				 :duration
 				 :end_of_fade_in
-				 ; :energy
 				 :key
 				 :key_confidence
 				 :loudness
@@ -220,13 +218,13 @@
   (norm-scale msong3))
 
 (defn cnt [] 
-  (concat (list (- (count (first msongv)) 1)) (list 1)))
+  (concat (list (- (count (first msongv)) 1)) (list 166 1)))
 
-; ; (def ssets (into [] (rest (mapv #(into [] %) (subsets [:sp :FL :RW :CL :CW :BD])))))
+; (def ssets (into [] (rest (mapv #(into [] %) (subsets [:sp :FL :RW :CL :CW :BD])))))
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
-   (nifty-feeder msongv 50 [0.1 0.05 0.01] (cnt) :verbose-flag [true]))
+   (nifty-feeder msongv 3 [0.1] (cnt) :verbose-flag [true]))
 
 (let [threshold 0.3]
   (println "\nTraining initialized with threshold" threshold)
