@@ -1,27 +1,18 @@
 # AI-project
 
-FIXME: description
+Predicting hotness of a song by its composition attributes.
 
 ## Installation
 
-Download from http://github.com/tim-hoff/ai-project.
+Download from http://github.com/tim-hoff/Million-Song-ANN.
 
 ## Usage
 
 Train the network and ready predictions with
     $ java -jar ai-project-0.1.0.jar [args]
 
-## Options
-
-FIXME: listing of options this app accepts.
-
 ## Examples
-
-...
-
-### Bugs
-
-...
+    (nifty-feeder training-set 5 [0.5 0.1] (cnt) :verbose-flag false)
 
 ## License
 
