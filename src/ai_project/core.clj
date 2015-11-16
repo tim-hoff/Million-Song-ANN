@@ -40,17 +40,28 @@
 
 (defn max-fold
   "max values for a matrix"
-  [lst]
+  [fn lst]
   (loop [acc (transient []) t lst]
     (if (every? empty? t)
       (rseq (persistent! acc))
-      (recur (conj! acc (apply max (map abs (map peek t)))) (map pop t))))); handle scaling for negative attributes
+      (recur (conj! acc (apply fn (map peek t))) (map pop t))))); handle scaling for negative attributes
+
+(defn bias [lst]
+  (mapv (fn [x] (mapv #(+ % 0.001) x)) lst))
+
+(defn scaled 
+  [x mn mx]
+  (/ (- x mn) (- mx mn)))
 
 (defn norm-scale
   "scales values in matrix to a range between -1 and 1, utilizing max-fld"
   [lst]
-  (let [mx (max-fold lst)]
-    (mapv #(mapv / % mx) lst)))
+  (let [blst (bias lst)
+        mx (max-fold max blst)
+        mn (max-fold min blst)]
+        (println "asdf" mx "jkl;" mn )
+        (mapv (fn [x] (mapv scaled x mn mx)) blst)))
+
 
 (defn sigmoid
   "takes in `z` and throws it in the sigmoid function\n"
@@ -112,25 +123,22 @@
 
 (defn find-error
   "find the error given a `value` and `theta` and if is what we expect to `match`"
-  [value theta match]
-
-    (if (> (abs (- value match)) theta) 1.0 0))
+  [yhat y]
+    (abs (- yhat y)))
 
 (defn error-check
   "checks error given `inputs` `weights` `threshold`"
-  [input weight threshold]
+  [input weight]
   (loop [in input er 0.0 acc []]
     (if (every? empty? in)
-      [er acc]
+      [er (/ er (count input)) acc]
       (let [row (peek in)
             x [(pop row)]
             y (peek row)
             yhat (feed-one x weight)
-            fr (find-error yhat threshold y)]
-        (recur 
-          (pop in)
-          (+ er fr)
-          (if (= 1.0 fr) (conj acc [yhat (- threshold yhat) ]) acc))))))
+            fr (find-error yhat y)]
+        (recur (pop in) (+ er fr)
+          (conj acc [yhat y (- y yhat)]))))))
 
 (defn error-loop
   "step between min and max and error-check to examine outliers."
@@ -162,10 +170,10 @@
   [data magnitude lrs size  & {:keys [verbose-flag] :or {verbose-flag false}}]
   (let [dt (expand data magnitude)
         w (first (weight-gen size))
-        ; w2 (refeed dt w lrs)
+        w2 (refeed dt w lrs)
         ]
     (when verbose-flag (println "Initial Weights") (pm w))
-     w))
+     w2))
 
 (defn bestset 
   [sets]
@@ -186,8 +194,7 @@
 
 (def msong1 
   "reordered dataset" 
-  (i/$ [ :analysis_sample_rate
-				 :artist_familiarity
+  (i/$ [ :artist_familiarity
 				 :artist_playmeid
 				 :duration
 				 :end_of_fade_in
@@ -218,26 +225,25 @@
   (norm-scale msong3))
 
 (defn cnt [] 
-  (concat (list (- (count (first msongv)) 1)) (list 166 1)))
+  (concat (list (- (count (first msongv)) 1)) (list 1)))
 
 ; (def ssets (into [] (rest (mapv #(into [] %) (subsets [:sp :FL :RW :CL :CW :BD])))))
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
-   (nifty-feeder msongv 3 [0.1] (cnt) :verbose-flag [true]))
+   (nifty-feeder msongv 30 [0.1] (cnt) :verbose-flag [true]))
 
-(let [threshold 0.3]
-  (println "\nTraining initialized with threshold" threshold)
-(let [ec (error-check msongv w threshold)
+
+(let [ec (error-check msongv w)
       er (first ec)
-      ac (last ec)]
+      ac (last ec)
+      ep (second ec)]
   (println "\nFinal Weights")
   (pm w)
   (println "\nError -" er)
-  (println "Err % -" (* 100.0 (/ er 5651.0)))
+  (println "Err % -" ep))
   ; (println "\nResults with errors:\n[Result][Off By]")
   ; (pm ac)
-  ))
 
 (defn -main
   "ANN to predict hotness of a song, sgd optimization"
