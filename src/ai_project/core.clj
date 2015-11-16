@@ -200,7 +200,7 @@
   (/ samples (* alpha (+ input output))))
 
 (defn cnt [] 
-  (concat (list (- (count (first msongv)) 1)) (list 176 1)))
+  (concat (list (- (count (first msongv)) 1)) (list 50 1)))
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
@@ -214,7 +214,9 @@
       ep (* 100.0 (second ec))]
 
   (println "\nError -" er)
-  (println "Err % -" ep))
+  (println "Err % -" ep)
+  (println " [y        yhat    |y-yhat| ]")
+  (pmm (take 20 (last ec))))
 
 (defn -main
   "ANN to predict hotness of a song, sgd optimization"
