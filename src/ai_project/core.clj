@@ -75,6 +75,18 @@
               yhat (mapv sigmoid z)]; its yhat
           (recur yhat rest-w))))))
 
+(def ex [0.2 0.4 0.6 0.8])
+
+(def exy (+ 0.2 0.05))
+
+(def ew1 [[ 0.85 0.10  0.33  0.02] 
+          [ 0.27 0.12 -0.81 -0.84] 
+          [-0.75 0.97 -0.53 -0.46]])
+(def ew2 [[0.01]
+          [0.57]
+          [0.68]
+          [-0.91]])
+
 (defn pluck
   "extract a value from nexted matrix"
   [fn matrix]
@@ -99,6 +111,8 @@
     (println "zthing")
     (pm zthing)
     wkp1))
+
+
 
 (defn feed
   "loops across input and adjustes the weights for all of it. 
