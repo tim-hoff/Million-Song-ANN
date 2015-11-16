@@ -133,7 +133,7 @@
           [er (/ er total) acc]
           (let [row (peek x)
                 lr 0.1
-                [y yhat this-error] (feed-one row w lr :training false)]
+                [y yhat this-error] (feed-one row weight lr :training false)]
             (recur
               (pop x)
               (+ er this-error)
