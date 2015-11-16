@@ -124,15 +124,15 @@
         a2 (mapv sigmoid z2)
         [z3] (dot a2 w2)
         yhat (sigmoid z3)
-        ycost (* -1 (- y yhat)); -(y-yhat)
-        xt (transpose [x]); [[x1 x2 x3]]  to [[x1] [x2] [x3]]
+        ycost (* -1 (- y yhat))]; -(y-yhat)]
+  (let [xt (transpose [x]); [[x1 x2 x3]]  to [[x1] [x2] [x3]]
         [w2t] (transpose w2)
         a2t (transpose [a2])
         sigmoid-prime-z3 (sigmoid-prime z3)
         delta-w2 (mmap #(* (* ycost sigmoid-prime-z3) %) a2t)
         lr-delta-w2 (mmap #(* % lr) delta-w2)
-        new-w2 (i/minus w2 lr-delta-w2)]
-  (let [sigmoid-prime-z2 (mapv sigmoid-prime z2)
+        new-w2 (i/minus w2 lr-delta-w2)
+        sigmoid-prime-z2 (mapv sigmoid-prime z2)
         w2t-sigpz2 (mul w2t sigmoid-prime-z2)
         spzc  (* ycost sigmoid-prime-z3)
         wss (mapv #(* spzc %) w2t-sigpz2)
@@ -151,11 +151,9 @@
       (if (every? empty? x)
         w
         (recur (pop x) (let [thisx (peek x)
-                             in [(pop thisx)]
-                             out (peek thisx) 
                              cnt (count x)
                              lr (* (/ cnt total) learnrate)] 
-                         (adjust-weights in w out lr)))))))
+                         (adjust-weights thisx w lr)))))))
 
 (defn feed-one 
   "feeds a single `x` into the ANN"
@@ -216,7 +214,7 @@
   "expands and feeds a dataset, useful for finding that special rate"
   [data magnitude lrs size  & {:keys [verbose-flag] :or {verbose-flag false}}]
   (let [dt (expand data magnitude)
-        [w] (weight-gen size)
+        w (weight-gen size)
         w2 (refeed dt w lrs)
         ]
     (when verbose-flag (println "Initial Weights") (pm w))
@@ -278,20 +276,19 @@
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
-   ; (nifty-feeder msongv 15 [0.1] (cnt) :verbose-flag [true]))
-   (weight-gen (cnt)))
+   (nifty-feeder msongv 1 [0.1] (cnt) :verbose-flag [false]))
 
-(adjust-weights (first msongv) w 0.1)
 
-; (let [ec (error-check msongv w)
-;       er (first ec)
-;       ac (last ec)
-;       ep (* 100 (second ec))]
 
-;   (println "\nFinal Weights")
-;   (pm w)
-;   (println "\nError -" er)
-;   (println "Err % -" ep))
+(let [ec (error-check msongv w)
+      er (first ec)
+      ac (last ec)
+      ep (* 100 (second ec))]
+
+  (println "\nFinal Weights")
+  (pm w)
+  (println "\nError -" er)
+  (println "Err % -" ep))
 
 
 (defn -main
