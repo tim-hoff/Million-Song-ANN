@@ -47,7 +47,7 @@
       (recur (conj! acc (apply fn (map peek t))) (map pop t))))); handle scaling for negative attributes
 
 (defn bias [lst]
-  (mapv (fn [x] (mapv #(+ % 0.001) x)) lst))
+  (mapv (fn [x] (mapv #(+ % (* rand 0.01) x)) lst)))
 
 (defn scaled 
   [x mn mx]
@@ -200,7 +200,7 @@
 
 (def msongv 
   "scaled vector dataset" 
-  (norm-scale (bias msong3)))
+ (bias (norm-scale (bias msong3))))
 
 (defn hn [input output samples alpha]
   (/ samples (* alpha (+ input output))))
