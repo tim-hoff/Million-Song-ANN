@@ -111,7 +111,9 @@
           lr-delta-w1 (mmap #(* lr %) delta-w1)
           new-w1 (i/minus w1 lr-delta-w1)
           new-w [new-w1 new-w2]] new-w)
-    (let [yc (abs (- y yhat))] [y yhat yc]))))
+    (let [yc (abs (- y yhat))
+          yc2 (if (> yc 0.12) yc 0.0)] 
+      [y yhat yc]))))
 
 (defn feed
   "loops across input and adjustes the weights for all of it. 
@@ -160,7 +162,11 @@
         w (weight-gen size)
         w2 (refeed dt w lrs)
         ]
-    (when verbose-flag (println "Initial Weights") (pm w))
+    (when verbose-flag (println "Initial Weights") 
+      (println "w1")
+      (pm (first w))
+      (println "w2")
+      (pm (last w)))
      w2))
 
 (def msong1 
@@ -200,23 +206,40 @@
   (/ samples (* alpha (+ input output))))
 
 (defn cnt [] 
-  (concat (list (- (count (first msongv)) 1)) (list 50 1)))
+  (concat (list (- (count (first msongv)) 1)) (list 70 1)))
 
-(def w
-  "adjusted weights for msongv with nifty-feeder"
-   (nifty-feeder msongv 5 [0.1] (cnt) :verbose-flag false))
+(let [verbose false
+      tsize 50
+      shuffled-set (shuffle (shuffle msongv))
+      test-set (into [] (take tsize shuffled-set))
+      training-set (into [] (drop tsize shuffled-set))]
+        (def w
+          "adjusted weights for msongv with nifty-feeder"
+          (nifty-feeder training-set 5 [0.5] (cnt) :verbose-flag verbose))
 
-(def ec (feed msongv w 0.1 :training false))
-
-(let [
-      er (first ec)
-      ac (last ec)
-      ep (* 100.0 (second ec))]
-
-  (println "\nError -" er)
-  (println "Err % -" ep)
-  (println " [y        yhat    |y-yhat| ]")
-  (pmm (take 20 (last ec))))
+        (when verbose
+          (println "Final Weights")
+          (println "w1") (pm (first w))
+          (println "w2") (pm (last w)))
+            
+        (def ec 
+          "count errors"
+          (feed test-set w 0.1 :training false))
+        (let [ymean (second ec)
+              ace (last ec)]
+          
+        (def variance (/ (reduce + 
+                                 (mapv #(let [[y yhat ycost] %1]
+                                          (Math/pow (- ycost ymean) 2)) ace)) tsize))
+        
+        (def standard-error (Math/sqrt variance))
+        
+        (println "\nError -" (first ec))
+        (println "Err % -" (* 100.0 ymean))
+          
+        (when verbose
+          (println " [y        yhat    |y-yhat| ]")
+          (pmm (last ec)))))
 
 (defn -main
   "ANN to predict hotness of a song, sgd optimization"
