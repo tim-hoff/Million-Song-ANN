@@ -209,7 +209,7 @@
   (concat (list (- (count (first msongv)) 1)) (list 70 1)))
 
 (let [verbose false
-      tsize 50
+      tsize 217
       shuffled-set (shuffle (shuffle msongv))
       test-set (into [] (take tsize shuffled-set))
       training-set (into [] (drop tsize shuffled-set))]
