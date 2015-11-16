@@ -56,12 +56,16 @@
 (defn norm-scale
   "scales values in matrix to a range between -1 and 1, utilizing max-fld"
   [lst]
-  (let [blst (bias lst)
-        mx (max-fold max blst)
-        mn (max-fold min blst)]
+  (let [mx (max-fold max lst)
+        mn (max-fold min lst)]
         (println "asdf" mx "jkl;" mn )
-        (mapv (fn [x] (mapv scaled x mn mx)) blst)))
+        (mapv (fn [x] (mapv scaled x mn mx)) lst)))
 
+
+(defn bias
+  "biases an ANN"
+  [lst]
+    (mapv (fn [x] (mapv #(+ % 0.001) x)) lst))
 
 (defn sigmoid
   "takes in `z` and throws it in the sigmoid function\n"
@@ -73,15 +77,30 @@
   [function matrix]
   (mapv #(mapv function %) matrix))
 
-(defn multitiered-forward
+(defn multitiered-feed
   "takes in weights `w and inputs `x and propagates the inputs though the network"
   [input w]
-  (loop [x input weights w]
-    (if (empty? weights)
-      x
-      (recur 
-         (mmap sigmoid (dot x (first weights))) ; first weights -> weights in this later so
-         (rest weights)))))
+  (let [true-x (pop input)
+        y (peek input)]
+    (loop [x true-x weights w]
+      (if (empty? weights)
+        x
+        (let [[this-w & rest-w] weights; first weights -> weights in this layer
+              z (dot x this-w); z for that
+              yhat (mapv sigmoid z)]; its yhat
+          (recur yhat rest-w))))))
+
+(def ex [0.2 0.4 0.6 0.8])
+
+(def exy (+ 0.2 0.05))
+
+(def ew1 [[ 0.85 0.10  0.33  0.02] 
+          [ 0.27 0.12 -0.81 -0.84] 
+          [-0.75 0.97 -0.53 -0.46]])
+(def ew2 [[0.01]
+          [0.57]
+          [0.68]
+          [-0.91]])
 
 (defn pluck
   "extract a value from nexted matrix"
@@ -91,7 +110,9 @@
 (defn adjust-weights
   "feeds data into nn and returns adjusted weights"
   [x w y lr]
-  (let [z (pluck first (dot x w))
+  (let [thing (dot x w)
+        zthing (pluck first thing)
+        z (pluck first (dot x w))
         yhat (sigmoid z)
         xt (transpose x); [[x1 x2 x3   to [[x1] [x2] [x3]]
         ycost (* -1 (- y yhat)); -(y-yhat)
@@ -100,19 +121,29 @@
         delta-w (mmap #(* (* ycost sigmoid-prime) %) xt)
         lrdw (mmap #(* % lr) delta-w)
         wkp1 (i/minus w lrdw)]
+    ; (println "thing")
+    ; (pm thing)
+    ; (println "zthing")
+    ; (pm zthing)
     wkp1))
+
+
 
 (defn feed
   "loops across input and adjustes the weights for all of it. 
   `input` assumes y values are at the end of the vectors"
   [input weight learnrate]
-  (loop [x input w weight]
-    (if (every? empty? x)
-      w
-      (recur (pop x) (let [thisx (peek x)
-                           in [(pop thisx)]
-                           out (peek thisx) ] 
-                       (adjust-weights in w out learnrate))))))
+  (let [total (count input)]
+    (loop [x input w weight]
+      
+      (if (every? empty? x)
+        w
+        (recur (pop x) (let [thisx (peek x)
+                             in [(pop thisx)]
+                             out (peek thisx) 
+                             cnt (count x)
+                             lr (* (/ cnt total) learnrate)] 
+                         (adjust-weights in w out lr)))))))
 
 (defn feed-one 
   "feeds a single `x` into the ANN"
@@ -126,6 +157,8 @@
   [yhat y]
     (abs (- yhat y)))
 
+
+; need to make these do squared error stuff and get r2 for the stuff
 (defn error-check
   "checks error given `inputs` `weights` `threshold`"
   [input weight]
@@ -136,9 +169,12 @@
             x [(pop row)]
             y (peek row)
             yhat (feed-one x weight)
-            fr (find-error yhat y)]
-        (recur (pop in) (+ er fr)
-          (conj acc [yhat y (- y yhat)]))))))
+            this-error (find-error yhat y)]
+        (recur 
+          (pop in)
+          (+ er this-error)
+          (conj acc [yhat y (- yhat y)]))))))
+
 
 (defn error-loop
   "step between min and max and error-check to examine outliers."
@@ -222,7 +258,7 @@
  
 (def msongv 
   "scaled vector dataset" 
-  (norm-scale msong3))
+  (norm-scale (bias msong3)))
 
 (defn cnt [] 
   (concat (list (- (count (first msongv)) 1)) (list 1)))
@@ -233,17 +269,16 @@
   "adjusted weights for msongv with nifty-feeder"
    (nifty-feeder msongv 30 [0.1] (cnt) :verbose-flag [true]))
 
-
 (let [ec (error-check msongv w)
       er (first ec)
       ac (last ec)
-      ep (second ec)]
+      ep (* 100 (second ec))]
+
   (println "\nFinal Weights")
   (pm w)
   (println "\nError -" er)
   (println "Err % -" ep))
-  ; (println "\nResults with errors:\n[Result][Off By]")
-  ; (pm ac)
+
 
 (defn -main
   "ANN to predict hotness of a song, sgd optimization"
