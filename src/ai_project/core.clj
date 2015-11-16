@@ -58,7 +58,6 @@
   [lst]
   (let [mx (max-fold max lst)
         mn (max-fold min lst)]
-        (println "asdf" mx "jkl;" mn )
         (mapv (fn [x] (mapv scaled x mn mx)) lst)))
 
 
@@ -107,27 +106,55 @@
   [fn matrix]
   (fn (first matrix)))
 
+(defn sigmoid-prime
+  [z]
+  (let [enz (Math/exp (* -1 z))]; e^(-z)])
+    (/ enz (Math/pow (+ 1 enz) 2)))); enz/(1+enz)^2)
+
 (defn adjust-weights
   "feeds data into nn and returns adjusted weights"
-  [x w y lr]
-  (let [thing (dot x w)
-        zthing (pluck first thing)
-        z (pluck first (dot x w))
-        yhat (sigmoid z)
-        xt (transpose x); [[x1 x2 x3   to [[x1] [x2] [x3]]
+  [row w lr]
+  (let [x (pop row)
+        y (peek row)
+        [w1 w2] w
+        z2 (dot x w1)
+        a2 (mapv sigmoid z2)
+        [z3] (dot a2 w2)
+        yhat (sigmoid z3)
         ycost (* -1 (- y yhat)); -(y-yhat)
-        enz (Math/exp (* -1 z)); e^(-z)
-        sigmoid-prime (/ enz (Math/pow (+ 1 enz) 2)); enz/(1+enz)^2
-        delta-w (mmap #(* (* ycost sigmoid-prime) %) xt)
-        lrdw (mmap #(* % lr) delta-w)
-        wkp1 (i/minus w lrdw)]
-    ; (println "thing")
-    ; (pm thing)
-    ; (println "zthing")
-    ; (pm zthing)
-    wkp1))
-
-
+        xt (transpose [x]); [[x1 x2 x3]]  to [[x1] [x2] [x3]]
+        w2t (transpose w2)
+        a2t (transpose [a2])
+        sigmoid-prime-z3 (sigmoid-prime z3)
+        delta-w2 (mmap #(* (* ycost sigmoid-prime-z3) %) w2)
+        lr-delta-w2 (mmap #(* % lr) delta-w2)
+        new-w2 (i/minus w2 lr-delta-w2)
+        sigmoid-prime-z2 (mapv sigmoid-prime z2)
+        ]
+    ; (println "x")
+    ; (pm x)
+    ; (println "y" y)
+    ; (println "w1" (count w1))
+    ; (println "w2" (count w2))
+    ; (println "z2" z2)
+    ; (println "a2" a2)
+    ; (println "z3" z3)
+    ; (println "yhat" yhat)
+    ; (println "ycost" ycost)
+    ; (println "xt")
+    ; (pm xt)
+    ; (println "w2t" (count w2t))
+    ; (pm w2t)
+    ; (println "sigmoid-prime-z3" sigmoid-prime-z3)
+    ; (println "delta-w2")
+    ; (pm delta-w2);
+    ; (println "lr-delta-w2" (count lr-delta-w2))
+    ; (pm lr-delta-w2)    
+    ; (println "new-w2")
+    ; (pm new-w2)
+    (println "sigmoid-prime-z2")
+    (pm sigmoid-prime-z2)
+    w))
 
 (defn feed
   "loops across input and adjustes the weights for all of it. 
@@ -135,7 +162,6 @@
   [input weight learnrate]
   (let [total (count input)]
     (loop [x input w weight]
-      
       (if (every? empty? x)
         w
         (recur (pop x) (let [thisx (peek x)
@@ -156,7 +182,6 @@
   "find the error given a `value` and `theta` and if is what we expect to `match`"
   [yhat y]
     (abs (- yhat y)))
-
 
 ; need to make these do squared error stuff and get r2 for the stuff
 (defn error-check
@@ -205,7 +230,7 @@
   "expands and feeds a dataset, useful for finding that special rate"
   [data magnitude lrs size  & {:keys [verbose-flag] :or {verbose-flag false}}]
   (let [dt (expand data magnitude)
-        w (first (weight-gen size))
+        [w] (weight-gen size)
         w2 (refeed dt w lrs)
         ]
     (when verbose-flag (println "Initial Weights") (pm w))
@@ -261,23 +286,26 @@
   (norm-scale (bias msong3)))
 
 (defn cnt [] 
-  (concat (list (- (count (first msongv)) 1)) (list 1)))
+  (concat (list (- (count (first msongv)) 1)) (list 160 1)))
 
 ; (def ssets (into [] (rest (mapv #(into [] %) (subsets [:sp :FL :RW :CL :CW :BD])))))
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
-   (nifty-feeder msongv 30 [0.1] (cnt) :verbose-flag [true]))
+   ; (nifty-feeder msongv 15 [0.1] (cnt) :verbose-flag [true]))
+   (weight-gen (cnt)))
 
-(let [ec (error-check msongv w)
-      er (first ec)
-      ac (last ec)
-      ep (* 100 (second ec))]
+(adjust-weights (first msongv) w 0.1)
 
-  (println "\nFinal Weights")
-  (pm w)
-  (println "\nError -" er)
-  (println "Err % -" ep))
+; (let [ec (error-check msongv w)
+;       er (first ec)
+;       ac (last ec)
+;       ep (* 100 (second ec))]
+
+;   (println "\nFinal Weights")
+;   (pm w)
+;   (println "\nError -" er)
+;   (println "Err % -" ep))
 
 
 (defn -main
