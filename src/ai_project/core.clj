@@ -116,16 +116,17 @@
 
 (defn adjust-weights
   "feeds data into nn and returns adjusted weights"
-  [row w lr]
+  [row w lr & {:keys [training] :or {training false}}]
   (let [x (pop row)
         y (peek row)
         [w1 w2] w
         z2 (dot x w1)
         a2 (mapv sigmoid z2)
         [z3] (dot a2 w2)
-        yhat (sigmoid z3)
-        ycost (* -1 (- y yhat))]; -(y-yhat)]
-  (let [xt (transpose [x]); [[x1 x2 x3]]  to [[x1] [x2] [x3]]
+        yhat (sigmoid z3)]
+    ;do when or if and yc here for error stuffs
+  (let [ycost (* -1 (- y yhat)); -(y-yhat)]
+        xt (transpose [x]); [[x1 x2 x3]]  to [[x1] [x2] [x3]]
         [w2t] (transpose w2)
         a2t (transpose [a2])
         sigmoid-prime-z3 (sigmoid-prime z3)
@@ -145,7 +146,7 @@
 (defn feed
   "loops across input and adjustes the weights for all of it. 
   `input` assumes y values are at the end of the vectors"
-  [input weight learnrate]
+  [input weight learnrate & {:keys [training] :or {training false}}]
   (let [total (count input)]
     (loop [x input w weight]
       (if (every? empty? x)
@@ -153,7 +154,7 @@
         (recur (pop x) (let [thisx (peek x)
                              cnt (count x)
                              lr (* (/ cnt total) learnrate)] 
-                         (adjust-weights thisx w lr)))))))
+                         (adjust-weights thisx w lr :training training)))))))
 
 (defn feed-one 
   "feeds a single `x` into the ANN"
@@ -276,19 +277,19 @@
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
-   (nifty-feeder msongv 1 [0.1] (cnt) :verbose-flag [false]))
+   (nifty-feeder msongv 1 [0.1] (cnt) :verbose-flag false))
 
 
 
-(let [ec (error-check msongv w)
-      er (first ec)
-      ac (last ec)
-      ep (* 100 (second ec))]
+; (let [ec (error-check msongv w)
+;       er (first ec)
+;       ac (last ec)
+;       ep (* 100 (second ec))]
 
-  (println "\nFinal Weights")
-  (pm w)
-  (println "\nError -" er)
-  (println "Err % -" ep))
+;   (println "\nFinal Weights")
+;   (pm w)
+;   (println "\nError -" er)
+;   (println "Err % -" ep))
 
 
 (defn -main
