@@ -111,6 +111,9 @@
   (let [enz (Math/exp (* -1 z))]; e^(-z)])
     (/ enz (Math/pow (+ 1 enz) 2)))); enz/(1+enz)^2)
 
+(defn pmm [m]
+  (pm m {:formatter (fn [x] (format "%.6f" (double x)))}))
+
 (defn adjust-weights
   "feeds data into nn and returns adjusted weights"
   [row w lr]
@@ -123,38 +126,21 @@
         yhat (sigmoid z3)
         ycost (* -1 (- y yhat)); -(y-yhat)
         xt (transpose [x]); [[x1 x2 x3]]  to [[x1] [x2] [x3]]
-        w2t (transpose w2)
+        [w2t] (transpose w2)
         a2t (transpose [a2])
         sigmoid-prime-z3 (sigmoid-prime z3)
-        delta-w2 (mmap #(* (* ycost sigmoid-prime-z3) %) w2)
+        delta-w2 (mmap #(* (* ycost sigmoid-prime-z3) %) a2t)
         lr-delta-w2 (mmap #(* % lr) delta-w2)
-        new-w2 (i/minus w2 lr-delta-w2)
-        sigmoid-prime-z2 (mapv sigmoid-prime z2)
-        ]
-    ; (println "x")
-    ; (pm x)
-    ; (println "y" y)
-    ; (println "w1" (count w1))
-    ; (println "w2" (count w2))
-    ; (println "z2" z2)
-    ; (println "a2" a2)
-    ; (println "z3" z3)
-    ; (println "yhat" yhat)
-    ; (println "ycost" ycost)
-    ; (println "xt")
-    ; (pm xt)
-    ; (println "w2t" (count w2t))
-    ; (pm w2t)
-    ; (println "sigmoid-prime-z3" sigmoid-prime-z3)
-    ; (println "delta-w2")
-    ; (pm delta-w2);
-    ; (println "lr-delta-w2" (count lr-delta-w2))
-    ; (pm lr-delta-w2)    
-    ; (println "new-w2")
-    ; (pm new-w2)
-    (println "sigmoid-prime-z2")
-    (pm sigmoid-prime-z2)
-    w))
+        new-w2 (i/minus w2 lr-delta-w2)]
+  (let [sigmoid-prime-z2 (mapv sigmoid-prime z2)
+        w2t-sigpz2 (mul w2t sigmoid-prime-z2)
+        spzc  (* ycost sigmoid-prime-z3)
+        wss (mapv #(* spzc %) w2t-sigpz2)
+        delta-w1 (mapv #(let [[x] %1] (mul wss x)) xt)
+        lr-delta-w1 (mmap #(* lr %) delta-w1)
+        new-w1 (i/minus w1 lr-delta-w1)
+        new-w [new-w1 new-w2]]
+    new-w)))
 
 (defn feed
   "loops across input and adjustes the weights for all of it. 
