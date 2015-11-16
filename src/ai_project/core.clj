@@ -215,7 +215,7 @@
       training-set (into [] (drop tsize shuffled-set))]
         (def w
           "adjusted weights for msongv with nifty-feeder"
-          (nifty-feeder training-set 5 [0.5] (cnt) :verbose-flag verbose))
+          (nifty-feeder training-set 5 [0.5 0.1] (cnt) :verbose-flag verbose))
 
         (when verbose
           (println "Final Weights")
