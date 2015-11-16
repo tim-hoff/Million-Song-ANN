@@ -62,15 +62,18 @@
   [function matrix]
   (mapv #(mapv function %) matrix))
 
-(defn multitiered-forward
+(defn multitiered-feed
   "takes in weights `w and inputs `x and propagates the inputs though the network"
   [input w]
-  (loop [x input weights w]
-    (if (empty? weights)
-      x
-      (recur 
-         (mmap sigmoid (dot x (first weights))) ; first weights -> weights in this later so
-         (rest weights)))))
+  (let [true-x (pop input)
+        y (peek input)]
+    (loop [x true-x weights w]
+      (if (empty? weights)
+        x
+        (let [[this-w & rest-w] weights; first weights -> weights in this layer
+              z (dot x this-w); z for that
+              yhat (mapv sigmoid z)]; its yhat
+          (recur yhat rest-w))))))
 
 (defn pluck
   "extract a value from nexted matrix"
@@ -80,7 +83,9 @@
 (defn adjust-weights
   "feeds data into nn and returns adjusted weights"
   [x w y lr]
-  (let [z (pluck first (dot x w))
+  (let [thing (dot x w)
+        zthing (pluck first thing)
+        z (pluck first (dot x w))
         yhat (sigmoid z)
         xt (transpose x); [[x1 x2 x3   to [[x1] [x2] [x3]]
         ycost (* -1 (- y yhat)); -(y-yhat)
@@ -89,6 +94,10 @@
         delta-w (mmap #(* (* ycost sigmoid-prime) %) xt)
         lrdw (mmap #(* % lr) delta-w)
         wkp1 (i/minus w lrdw)]
+    (println "thing")
+    (pm thing)
+    (println "zthing")
+    (pm zthing)
     wkp1))
 
 (defn feed
@@ -116,6 +125,7 @@
 
     (if (> (abs (- value match)) theta) 1.0 0))
 
+; need to make these do squared error stuff and get r2 for the stuff
 (defn error-check
   "checks error given `inputs` `weights` `threshold`"
   [input weight threshold]
@@ -224,20 +234,26 @@
 
 (def w
   "adjusted weights for msongv with nifty-feeder"
-   (nifty-feeder msongv 3 [0.1] (cnt) :verbose-flag [true]))
+   ; (nifty-feeder msongv 3 [0.1] (cnt) :verbose-flag [true])
+   (weight-gen (cnt)))
 
-(let [threshold 0.3]
+
+(let [threshold 0.3
+      xn (first msongv)
+      [z] (multitiered-feed xn w)]
   (println "\nTraining initialized with threshold" threshold)
-(let [ec (error-check msongv w threshold)
-      er (first ec)
-      ac (last ec)]
-  (println "\nFinal Weights")
-  (pm w)
-  (println "\nError -" er)
-  (println "Err % -" (* 100.0 (/ er 5651.0)))
-  ; (println "\nResults with errors:\n[Result][Off By]")
-  ; (pm ac)
-  ))
+  
+; (let [ec (error-check msongv w threshold)
+;       er (first ec)
+;       ac (last ec)]
+;   (println "\nFinal Weights")
+;   (pm w)
+;   (println "\nError -" er)
+;   (println "Err % -" (* 100.0 (/ er 5651.0)))
+;   ; (println "\nResults with errors:\n[Result][Off By]")
+;   ; (pm ac)
+;   )
+)
 
 (defn -main
   "ANN to predict hotness of a song, sgd optimization"
