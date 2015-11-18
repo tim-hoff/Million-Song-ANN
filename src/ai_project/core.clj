@@ -228,19 +228,21 @@
         (let [ymean (second ec)
               yV (last ec)]
           
-        (def sse 
+        (def sse
+          "Error Sum of Squares,
+            Measure of the variation of the observed values around the regression line."
           (reduce + (mapv #(let [[y yhat ycost] %1]
                                (Math/pow ycost 2)) yV)))
         
-        (def tss 
+        (def tss
+          "SST Total Sum of Squares,
+          Measure of the variation of the observed values around the mean."
           (reduce + (mapv #(let [[y yhat ycost] %1]
                                (Math/pow (- ycost ymean) 2)) yV)))        
         (def variance (/ tss tsize))
         
         (def standard-error (Math/sqrt variance))
       
-        ; (feed-one wx [ww1 ww2] 0.1 :training false)
-
         (println "\nTotal Error -" (first ec))
         (println "\nAverage Error -" (* 100.0 ymean))
         (println "\nSSE -" sse) 
