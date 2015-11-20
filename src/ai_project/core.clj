@@ -53,6 +53,13 @@
   [x mn mx]
   (/ (- x mn) (- mx mn)))
 
+(defn pick-a-number [hat] 
+  "picks a number between 0 and `hat`"
+  (println "Randomly picking a number between 0 and" hat)
+  (Thread/sleep 1000)
+  (print "Your Number: ")
+  (mod (Math/round (* hat 100.0 (rand))) (+ 1 hat)))
+
 (defn norm-scale
   "scales values in matrix to a range between -1 and 1, utilizing max-fld"
   [lst]
