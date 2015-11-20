@@ -53,8 +53,9 @@
   [x mn mx]
   (/ (- x mn) (- mx mn)))
 
-(defn pick-a-number [hat] 
+(defn pick-a-number
   "picks a number between 0 and `hat`"
+  [hat]
   (println "Randomly picking a number between 0 and" hat)
   (Thread/sleep 1000)
   (print "Your Number: ")
