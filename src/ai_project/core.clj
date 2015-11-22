@@ -41,8 +41,10 @@
       (rseq (persistent! acc))
       (recur (conj! acc (apply fn (map peek t))) (map pop t))))); handle scaling for negative attributes
 
-(defn bias [lst]
-  (mapv (fn [x] (mapv #(+ % (* rand 0.01) x)) lst)))
+(defn bias
+  "biases an ANN"
+  [lst]
+    (mapv (fn [x] (mapv #(+ % 0.0001) x)) lst))
 
 (defn scaled 
   [x mn mx]
