@@ -6,10 +6,6 @@
 
 (require '[clojure.java.io :as io]); io resources
 (require '[incanter.core :as i]); statistics library
-(require '[incanter.datasets :as ds]); datasets, get-dataset
-(require '[incanter.excel :as xls]); excel
-(require '[incanter.stats :as stat]); stats
-(require '[incanter.charts :as chart]); charts
 (require '[incanter.io :as iio]); csv
 
 (def msong 
