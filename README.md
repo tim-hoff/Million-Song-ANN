@@ -15,8 +15,5 @@ Train the network and ready predictions with
     (nifty-feeder training-set 5 [0.5 0.1] (cnt) :verbose-flag false)
 
 ## License
-
+None.
 Copyright © 2015 Timothy Hoff
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.

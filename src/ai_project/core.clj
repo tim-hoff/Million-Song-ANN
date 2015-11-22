@@ -18,11 +18,6 @@
   "unchanged dataset" 
   (iio/read-dataset (str (io/resource "msong.csv")) :header true))
 
-(defn l2v
-  "convert list to vector matrix"
-  [matrix]
-  (mapv #(into [] %) matrix))
-
 (defn gen-matrix
   "generates a `r` by `c` matrix with random weights between -1 and 1."
 	[r c & m]
@@ -53,25 +48,12 @@
   [x mn mx]
   (/ (- x mn) (- mx mn)))
 
-(defn pick-a-number
-  "picks a number between 0 and `hat`"
-  [hat]
-  (println "Randomly picking a number between 0 and" hat)
-  (Thread/sleep 1000)
-  (print "Your Number: ")
-  (mod (Math/round (* hat 100.0 (rand))) (+ 1 hat)))
-
 (defn norm-scale
   "scales values in matrix to a range between -1 and 1, utilizing max-fld"
   [lst]
   (let [mx (fn-fold max lst)
         mn (fn-fold min lst)]
         (mapv (fn [x] (mapv scaled x mn mx)) lst)))
-
-(defn bias
-  "biases an ANN"
-  [lst]
-    (mapv (fn [x] (mapv #(+ % 0.0001) x)) lst))
 
 (defn sigmoid
   "takes in `z` and throws it in the sigmoid function\n"

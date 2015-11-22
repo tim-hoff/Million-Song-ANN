@@ -1,8 +1,7 @@
 (defproject ai-project "0.1.0"
   :description "Hotness prediction with sgd"
   :url "http://github.com/tim-hoff/ai-project"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "None"}
   :dependencies [[org.clojure/clojure "1.8.0-beta2"]
               [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 							[criterium "0.4.3"]
